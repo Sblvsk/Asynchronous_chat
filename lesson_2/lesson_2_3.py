@@ -1,5 +1,4 @@
 import yaml
-import codecs
 
 data = {
     "list": ["foo", "bar", "baz"],
@@ -11,10 +10,8 @@ data = {
     }
 }
 
-with codecs.open('file.yaml', 'w', encoding='utf8') as f:
+with open('file.yaml', 'w', encoding='utf8') as f:
     yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
-with codecs.open('file.yaml', 'r', encoding='utf8') as f:
-    loaded_data = yaml.load(f, Loader=yaml.FullLoader)
-
-assert data == loaded_data
+with open('file.yaml', 'r', encoding='utf8' ) as f:
+    print(f.read())

@@ -1,7 +1,18 @@
 {
-    "item": "\u041a\u043d\u0438\u0433\u0430",
-    "quantity": 1,
-    "price": 1000,
-    "buyer": "\u0418\u0432\u0430\u043d\u043e\u0432 \u0418\u0432\u0430\u043d",
-    "date": "2023-02-22"
+    "orders": [
+        {
+            "item": "Book",
+            "quantity": 1,
+            "price": 1000,
+            "buyer": "Ivan",
+            "date": "2023-02-22"
+        },
+        {
+            "item": "Book",
+            "quantity": 1,
+            "price": 1000,
+            "buyer": "Ivan",
+            "date": "2023-02-22"
+        }
+    ]
 }

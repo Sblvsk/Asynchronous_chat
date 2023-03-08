@@ -11,7 +11,7 @@ def get_data():
     main_data = [["Изготовитель системы", "Название ОС", "Код продукта", "Тип системы"]]
 
     for file_num in range(1, 4):
-        with open(f"info_{file_num}.txt") as f:
+        with open(f'info_{file_num}.txt') as f:
             file_data = f.read()
 
             os_prod = re.findall(r"Изготовитель ОС:\s+(.*)", file_data)[0]
@@ -25,12 +25,11 @@ def get_data():
             os_type_list.append(os_type)
 
             main_data.append([os_prod, os_name, os_code, os_type])
-
-    return os_prod_list, os_name_list, os_code_list, os_type_list, main_data
+    return main_data
 
 
 def write_to_csv(file_path):
-    os_prod_list, os_name_list, os_code_list, os_type_list, main_data = get_data()
+    main_data = get_data()
 
     with open(file_path, "w", newline="") as csv_file:
         writer = csv.writer(csv_file)
