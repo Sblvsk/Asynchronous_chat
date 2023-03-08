@@ -1,6 +1,8 @@
 import subprocess
+import locale
 
 # задание 1
+import chardet
 
 word_1 = 'разработка'
 word_2 = 'сокет'
@@ -32,8 +34,16 @@ print(type(word_3), word_3, len(word_3))
 
 
 # задание 3
-# Слова "класс" и "функция" невозможно записать в байтовом типе,
-# так как они содержат символы, не поддерживаемые в ASCII-кодировке.
+print()
+err_str_1 = "attribute"
+err_str_2 = "класс"
+err_str_3 = "функция"
+err_str_4 = "type"
+
+print(err_str_1.encode('utf-8').decode('ascii', 'ignore'))
+print(err_str_2.encode('utf-8').decode('ascii', 'ignore'))
+print(err_str_3.encode('utf-8').decode('ascii', 'ignore'))
+print(err_str_4.encode('utf-8').decode('ascii', 'ignore'))
 
 
 # задание 4
@@ -68,8 +78,6 @@ print(type(decoded_word_4), decoded_word_4)
 # задание 5
 print()
 
-import subprocess
-
 response_yandex = subprocess.Popen(['ping', 'yandex.ru'], stdout=subprocess.PIPE)
 response_youtube = subprocess.Popen(['ping', 'youtube.com'], stdout=subprocess.PIPE)
 
@@ -86,11 +94,16 @@ for line in response_youtube.stdout:
 # задание 6
 print()
 
+with open('test_file.txt', 'w') as f:
+    f.write('сетевое программирование\n')
+    f.write('сокет\n')
+    f.write('декоратор\n')
 
 with open('test_file.txt', 'rb') as f:
-    content = f.read()
-    print(content)
+    result = chardet.detect(f.read())
+    print(result['encoding'])
 
 with open('test_file.txt', 'r', encoding='utf-8') as f:
     content = f.read()
     print(content)
+    print('Encoding: ', locale.getpreferredencoding())
