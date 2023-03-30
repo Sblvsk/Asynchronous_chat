@@ -1,9 +1,0 @@
-integer: 42
-list:
-- foo
-- bar
-- baz
-nested_dict:
-  key1: value1€
-  key2: value2€
-  key3: value3€
