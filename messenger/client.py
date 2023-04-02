@@ -17,3 +17,9 @@ class Client:
 
     def close(self):
         self.sock.close()
+
+
+client = Client("localhost", 8888)
+client.connect()
+client.send("test message")
+client.close()

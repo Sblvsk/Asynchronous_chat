@@ -1,97 +1,45 @@
 import socket
-from threading import Thread
+import threading
+import sqlite3
 
 
-class PortDescriptor:
-    def __init__(self, default_port=7777):
-        self._port = default_port
+def handle_client(client_socket, client_address):
+    print(f"[+] Connected: {client_address}")
+    client_login = client_socket.recv(1024).decode()
+    print(f"Client login: {client_login}")
+    add_history_query = f"INSERT INTO history (login, ip) VALUES ('{client_login}', '{client_address[0]}')"
+    cursor.execute(add_history_query)
+    db.commit()
 
-    def __get__(self, instance, owner):
-        return self._port
-
-    def __set__(self, instance, value):
-        if not isinstance(value, int) or value < 0:
-            raise ValueError("Port number must be a non-negative integer")
-        self._port = value
-
-
-class ClientVerifier(type):
-    def __init__(cls, name, bases, attrs):
-        for name, attr in attrs.items():
-            if name == "accept" or name == "listen":
-                if callable(attr):
-                    raise TypeError(f"Method {name} of socket cannot be used in class {cls.__name__}")
-            elif name == "socket":
-                if not isinstance(attr, socket.socket):
-                    raise TypeError(f"socket attribute of class {cls.__name__} must be a socket object")
-                if attr.family != socket.AF_INET or attr.type != socket.SOCK_STREAM:
-                    raise TypeError(f"socket attribute of class {cls.__name__} must be a TCP socket")
+    while True:
+        data = client_socket.recv(1024).decode()
+        if not data:
+            break
+        client_socket.sendall(data.encode())
+    print(f"[-] Disconnected: {client_address}")
+    client_socket.close()
 
 
-class ServerVerifier(type):
-    def __init__(cls, name, bases, attrs):
-        for name, attr in attrs.items():
-            if name == "connect":
-                if callable(attr):
-                    raise TypeError(f"Method {name} of socket cannot be used in class {cls.__name__}")
-            elif name == "socket":
-                if not isinstance(attr, socket.socket):
-                    raise TypeError(f"socket attribute of class {cls.__name__} must be a socket object")
-                if attr.family != socket.AF_INET or attr.type != socket.SOCK_STREAM:
-                    raise TypeError(f"socket attribute of class {cls.__name__} must be a TCP socket")
+def run_server(host, port):
+    print(f"[*] Starting server at {host}:{port}")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((host, port))
+    server_socket.listen(5)
+    print("[*] Server is ready to accept connections")
+    while True:
+        client_socket, client_address = server_socket.accept()
+        client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
+        client_thread.start()
 
 
-class Client(metaclass=ClientVerifier):
-    def __init__(self, host, port):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((host, port))
+db = sqlite3.connect("database.db")
+cursor = db.cursor()
+cursor.execute('''CREATE TABLE IF NOT EXISTS client
+                  (login TEXT UNIQUE, info TEXT)''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS history
+                  (login TEXT, ip TEXT, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS contacts
+                  (owner_id INTEGER, contact_id INTEGER)''')
+db.commit()
 
-    def send(self, message):
-        self.socket.sendall(message.encode())
-
-    def receive(self):
-        return self.socket.recv(1024).decode()
-
-    def close(self):
-        self.socket.close()
-
-
-class Server(metaclass=ServerVerifier):
-    class Port(PortDescriptor):
-        pass
-
-    def __init__(self, port=7777):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind(("0.0.0.0", port))
-        self.socket.listen(1)
-        self.clients = []
-        self.running = True
-
-    def start(self):
-        while self.running:
-            conn, addr = self.socket.accept()
-            client = ClientHandler(conn, addr)
-            client.start()
-            self.clients.append(client)
-
-    def stop(self):
-        self.running = False
-        self.socket.close()
-        for client in self.clients:
-            client.close()
-
-
-class ClientHandler(Thread):
-    def __init__(self, conn, addr):
-        super().__init__()
-        self.conn = conn
-        self.addr = addr
-
-    def run(self):
-        while True:
-            message = self.conn.recv(1024)
-            if not message:
-                break
-            for client in Server.clients:
-                client.conn.sendall(message)
-        self.conn.close()
+run_server("localhost", 8888)
