@@ -1,6 +1,7 @@
 import socket
 import threading
 import sqlite3
+import json
 
 
 def handle_client(client_socket, client_address):
@@ -12,10 +13,38 @@ def handle_client(client_socket, client_address):
     db.commit()
 
     while True:
-        data = client_socket.recv(1024).decode()
-        if not data:
+        try:
+            data = client_socket.recv(1024).decode()
+            if not data:
+                break
+            request = json.loads(data)
+            action = request.get('action')
+            if action == 'add_contact':
+                contact_login = request.get('user_id')
+                add_contact_query = f"INSERT INTO contacts (owner_id, contact_id) VALUES ((SELECT id FROM client WHERE login = '{client_login}'), (SELECT id FROM client WHERE login = '{contact_login}'))"
+                cursor.execute(add_contact_query)
+                db.commit()
+                response = {'response': 200}
+                client_socket.send(json.dumps(response).encode())
+            elif action == 'del_contact':
+                contact_login = request.get('user_id')
+                del_contact_query = f"DELETE FROM contacts WHERE owner_id = (SELECT id FROM client WHERE login = '{client_login}') AND contact_id = (SELECT id FROM client WHERE login = '{contact_login}')"
+                cursor.execute(del_contact_query)
+                db.commit()
+                response = {'response': 200}
+                client_socket.send(json.dumps(response).encode())
+            elif action == 'get_contacts':
+                get_contacts_query = f"SELECT login FROM client WHERE id IN (SELECT contact_id FROM contacts WHERE owner_id = (SELECT id FROM client WHERE login = '{client_login}'))"
+                cursor.execute(get_contacts_query)
+                contacts = [row[0] for row in cursor.fetchall()]
+                response = {'response': 202, 'alert': contacts}
+                client_socket.send(json.dumps(response).encode())
+        except Exception as e:
+            print(f"[-] Error: {e}")
+            response = {'response': 500}
+            client_socket.send(json.dumps(response).encode())
             break
-        client_socket.sendall(data.encode())
+
     print(f"[-] Disconnected: {client_address}")
     client_socket.close()
 
@@ -35,11 +64,13 @@ def run_server(host, port):
 db = sqlite3.connect("database.db")
 cursor = db.cursor()
 cursor.execute('''CREATE TABLE IF NOT EXISTS client
-                  (login TEXT UNIQUE, info TEXT)''')
+                  (id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT UNIQUE, info TEXT)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS history
                   (login TEXT, ip TEXT, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS contacts
-                  (owner_id INTEGER, contact_id INTEGER)''')
+                  (owner_id INTEGER, contact_id INTEGER,
+                  FOREIGN KEY(owner_id) REFERENCES client(id),
+                  FOREIGN KEY(contact_id) REFERENCES client(id))''')
 db.commit()
 
 run_server("localhost", 8888)
