@@ -1,5 +1,8 @@
 import socket
 
+from gui import ChatWindow, AdminWindow
+from PyQt5.QtWidgets import QApplication
+
 
 class Client:
     def __init__(self, host, port):
@@ -19,7 +22,16 @@ class Client:
         self.sock.close()
 
 
-client = Client("localhost", 8888)
-client.connect()
-client.send("test message")
-client.close()
+if __name__ == '__main__':
+    app = QApplication([])
+
+    client = Client("localhost", 8888)
+    client.connect()
+
+    chat_window = ChatWindow(client)
+    admin_window = AdminWindow(client)
+
+    chat_window.show()
+    admin_window.show()
+
+    app.exec_()
