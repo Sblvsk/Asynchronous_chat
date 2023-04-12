@@ -3,8 +3,18 @@ import threading
 import sqlite3
 import json
 
+"""
+Module for running a server that handles clients' requests and stores them in a SQLite database.
+"""
+
 
 def handle_client(client_socket, client_address):
+    """
+    Handles a client's requests by parsing and executing them. Stores the client's login and IP address in the database.
+
+    :param client_socket: socket object representing the client's socket connection
+    :param client_address: tuple containing the client's IP address and port number
+    """
     print(f"[+] Connected: {client_address}")
     client_login = client_socket.recv(1024).decode()
     print(f"Client login: {client_login}")
@@ -50,6 +60,12 @@ def handle_client(client_socket, client_address):
 
 
 def run_server(host, port):
+    """
+    Runs the server by listening for incoming connections and creating a thread to handle each client.
+
+    :param host: string representing the host's IP address or domain name
+    :param port: integer representing the port number on which to listen for incoming connections
+    """
     print(f"[*] Starting server at {host}:{port}")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
